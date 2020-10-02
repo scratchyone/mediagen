@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  generateName: mediagen-
+  labels:
+    app: mediagen
+  name: mediagen
+  namespace: default
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+    - nodePort: 31703
+      port: 21000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: mediagen
+  sessionAffinity: None
+  type: LoadBalancer
