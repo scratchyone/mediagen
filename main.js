@@ -134,7 +134,7 @@ app.get('/owoActions', (req, res) => {
   res.json(Object.keys(owoInfo));
 });
 const gifResize = require('@gumlet/gif-resize');
-app.get('/owoProxy/', async (req, res) => {
+app.get('/owoProxy.gif', async (req, res) => {
   res.setHeader('Content-Type', 'image/gif');
   res.send(
     await gifResize({
