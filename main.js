@@ -106,6 +106,8 @@ app.get('/poll', (req, res) => {
 Array.prototype.random = function () {
   return this[Math.floor(Math.random() * this.length)];
 };
+const NodeCache = require('node-cache');
+const myCache = new NodeCache();
 const owoInfo = require('./owoInfo.json');
 app.get('/owoJson', (req, res) => {
   if (Object.keys(owoInfo).indexOf(req.query.action) === -1) {
@@ -136,14 +138,20 @@ app.get('/owoActions', (req, res) => {
 const gifResize = require('@gumlet/gif-resize');
 app.get('/owoProxy.gif', async (req, res) => {
   res.setHeader('Content-Type', 'image/gif');
-  res.send(
-    await gifResize({
-      height: 223,
-      stretch: true,
-      optimization: 1,
-      resize_method: 'sample',
-    })(await (await fetch(decodeURIComponent(req.query.url))).buffer())
-  );
+  if (myCache.get(`owoProxy.${decodeURIComponent(req.query.url)}`))
+    res.send(myCache.get(`owoProxy.${decodeURIComponent(req.query.url)}`));
+  else {
+    myCache.set(
+      `owoProxy.${decodeURIComponent(req.query.url)}`,
+      await gifResize({
+        height: 223,
+        stretch: true,
+        optimization: 3,
+        resize_method: 'lanczos3',
+      })(await (await fetch(decodeURIComponent(req.query.url))).buffer())
+    );
+    res.send(myCache.get(`owoProxy.${decodeURIComponent(req.query.url)}`));
+  }
 });
 app.get('/online', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
