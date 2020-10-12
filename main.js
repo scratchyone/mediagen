@@ -137,6 +137,14 @@ app.get('/owoActions', (req, res) => {
 });
 const gifResize = require('@gumlet/gif-resize');
 app.get('/owoProxy.gif', async (req, res) => {
+  if (
+    !Object.values(owoInfo)
+      .flatMap((n) => n.gifs)
+      .includes(req.query.url)
+  ) {
+    noFreeConversions(res);
+    return;
+  }
   res.setHeader('Content-Type', 'image/gif');
   if (myCache.get(`owoProxy.${decodeURIComponent(req.query.url)}`))
     res.send(myCache.get(`owoProxy.${decodeURIComponent(req.query.url)}`));
@@ -161,6 +169,20 @@ async function resizeGif(url) {
     myCache.set(`owoProxy.${gif}`, await resizeGif(gif));
   console.log('Cached all gifs');
 })();
+function noFreeConversions(res) {
+  res.setHeader('Content-Type', 'image/png');
+  const canvas = Canvas.createCanvas(320, 194);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'white';
+  ctx.rect(0, 0, 320, 194);
+  ctx.fill();
+  ctx.fillStyle = '#333333';
+  ctx.textAlign = 'center';
+  ctx.font = '500 27px Roboto';
+  ctx.fillText('No Free Conversions!', 320 / 2, 107);
+  canvas.pngStream().pipe(res);
+  res.status(404);
+}
 app.get('/online', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
   const canvas = Canvas.createCanvas(320, 194);
