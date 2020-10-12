@@ -129,6 +129,9 @@ app.get('/owoJson', (req, res) => {
           .join('somebody'),
   });
 });
+app.get('/owoActions', (req, res) => {
+  res.json(Object.keys(owoInfo));
+});
 app.get('/online', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
   const canvas = Canvas.createCanvas(320, 194);
