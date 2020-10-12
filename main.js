@@ -102,6 +102,33 @@ app.get('/poll', (req, res) => {
     .pngStream()
     .pipe(res);
 });
+Array.prototype.random = function () {
+  return this[Math.floor(Math.random() * this.length)];
+};
+const owoInfo = require('./owoInfo.json');
+app.get('/owoJson', (req, res) => {
+  if (Object.keys(owoInfo).indexOf(req.query.action) === -1) {
+    res.status(404);
+    res.json({});
+    return;
+  }
+  res.json({
+    imageURL: owoInfo[req.query.action].gifs.random(),
+    authorName: req.query.authee
+      ? owoInfo[req.query.action].titles
+          .random()
+          .split('authee')
+          .join(req.query.authee)
+          .split('author')
+          .join(req.query.author)
+      : owoInfo[req.query.action].titles
+          .random()
+          .split('author')
+          .join(req.query.author)
+          .split('authee')
+          .join('somebody'),
+  });
+});
 app.get('/online', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
   const canvas = Canvas.createCanvas(320, 194);
