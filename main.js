@@ -139,6 +139,7 @@ app.get('/owoProxy.gif', async (req, res) => {
   res.send(
     await gifResize({
       height: 223,
+      stretch: true,
     })(await (await fetch(decodeURIComponent(req.query.url))).buffer())
   );
 });
