@@ -143,16 +143,24 @@ app.get('/owoProxy.gif', async (req, res) => {
   else {
     myCache.set(
       `owoProxy.${decodeURIComponent(req.query.url)}`,
-      await gifResize({
-        height: 223,
-        stretch: true,
-        optimization: 3,
-        resize_method: 'lanczos3',
-      })(await (await fetch(decodeURIComponent(req.query.url))).buffer())
+      await resizeGif(decodeURIComponent(req.query.url))
     );
     res.send(myCache.get(`owoProxy.${decodeURIComponent(req.query.url)}`));
   }
 });
+async function resizeGif(url) {
+  return await gifResize({
+    height: 223,
+    stretch: true,
+    optimization: 3,
+    resize_method: 'lanczos3',
+  })(await (await fetch(url)).buffer());
+}
+(async () => {
+  for (const gif of Object.values(owoInfo).flatMap((n) => n.gifs))
+    myCache.set(`owoProxy.${gif}`, await resizeGif(gif));
+  console.log('Cached all gifs');
+})();
 app.get('/online', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
   const canvas = Canvas.createCanvas(320, 194);
