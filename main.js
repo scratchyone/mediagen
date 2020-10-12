@@ -3,6 +3,7 @@ const app = express();
 const port = 3000;
 const Canvas = require('canvas');
 Canvas.registerFont('./Roboto-Bold.ttf', { family: 'Roboto' });
+const fetch = require('node-fetch');
 function roundRect(ctx, x, y, width, height, rradius, fill, stroke) {
   const radius = { tl: rradius, tr: rradius, br: rradius, bl: rradius };
   ctx.beginPath();
@@ -131,6 +132,15 @@ app.get('/owoJson', (req, res) => {
 });
 app.get('/owoActions', (req, res) => {
   res.json(Object.keys(owoInfo));
+});
+const gifResize = require('@gumlet/gif-resize');
+app.get('/owoProxy/*', async (req, res) => {
+  res.setHeader('Content-Type', 'image/gif');
+  res.send(
+    await gifResize({
+      height: 223,
+    })(await (await fetch(req.params['0'])).buffer())
+  );
 });
 app.get('/online', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
