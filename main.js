@@ -45,8 +45,8 @@ function createPollAttachment(votes) {
   } else if (
     isNaN(votes.up) ||
     isNaN(votes.down) ||
-    votes.up > 1_000_000 ||
-    votes.down > 1_000_000 ||
+    votes.up > 1000000 ||
+    votes.down > 1000000 ||
     votes.up < 0 ||
     votes.down < 0
   ) {
