@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+const sharp = require('sharp');
 const Canvas = require('canvas');
 Canvas.registerFont('./Roboto-Bold.ttf', { family: 'Roboto' });
 const fetch = require('node-fetch');
@@ -106,17 +107,21 @@ app.get('/poll', (req, res) => {
 Array.prototype.random = function () {
   return this[Math.floor(Math.random() * this.length)];
 };
+const getColors = require('get-image-colors');
 const NodeCache = require('node-cache');
 const myCache = new NodeCache();
 const owoInfo = require('./owoInfo.json');
-app.get('/owoJson', (req, res) => {
+const rgbHex = require('rgb-hex');
+app.get('/owoJson', async (req, res) => {
   if (Object.keys(owoInfo).indexOf(req.query.action) === -1) {
     res.status(404);
     res.json({});
     return;
   }
+  const gif = owoInfo[req.query.action].gifs.random();
+  const dom = (await sharp(await (await fetch(gif)).buffer()).stats()).dominant;
   res.json({
-    imageURL: owoInfo[req.query.action].gifs.random(),
+    imageURL: gif,
     authorName: req.query.authee
       ? owoInfo[req.query.action].titles
           .random()
@@ -130,6 +135,7 @@ app.get('/owoJson', (req, res) => {
           .join(req.query.author)
           .split('authee')
           .join('somebody'),
+    color: '#' + rgbHex(dom.r, dom.g, dom.b),
   });
 });
 app.get('/owoActions', (req, res) => {

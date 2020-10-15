@@ -12,8 +12,11 @@
     "@gumlet/gif-resize": "^1.1.1",
     "canvas": "^2.6.1",
     "express": "^4.17.1",
+    "get-image-colors": "^4.0.0",
     "node-cache": "^5.1.2",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "rgb-hex": "^3.0.0",
+    "sharp": "^0.26.2"
   },
   "devDependencies": {
     "eslint": "^7.11.0"
