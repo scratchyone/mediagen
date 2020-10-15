@@ -107,11 +107,11 @@ app.get('/poll', (req, res) => {
 Array.prototype.random = function () {
   return this[Math.floor(Math.random() * this.length)];
 };
-const getColors = require('get-image-colors');
 const NodeCache = require('node-cache');
 const myCache = new NodeCache();
 const owoInfo = require('./owoInfo.json');
-const rgbHex = require('rgb-hex');
+const getColors = require('get-image-colors');
+
 app.get('/owoJson', async (req, res) => {
   if (Object.keys(owoInfo).indexOf(req.query.action) === -1) {
     res.status(404);
@@ -119,7 +119,12 @@ app.get('/owoJson', async (req, res) => {
     return;
   }
   const gif = owoInfo[req.query.action].gifs.random();
-  const dom = (await sharp(await (await fetch(gif)).buffer()).stats()).dominant;
+  const color = await getColors(
+    await sharp(await (await fetch(gif)).buffer())
+      .png()
+      .toBuffer(),
+    'image/png'
+  );
   res.json({
     imageURL: gif,
     authorName: req.query.authee
@@ -135,7 +140,7 @@ app.get('/owoJson', async (req, res) => {
           .join(req.query.author)
           .split('authee')
           .join('somebody'),
-    color: '#' + rgbHex(dom.r, dom.g, dom.b),
+    color: color[0].hex(),
   });
 });
 app.get('/owoActions', (req, res) => {
