@@ -121,7 +121,9 @@ app.get('/owoJson', async (req, res) => {
   const gif = owoInfo[req.query.action].gifs.random();
   const color = (
     await getColors(
-      await sharp(await (await fetch(gif)).buffer())
+      await sharp(
+        myCache.get(`owoProxy.${gif}`) || (await (await fetch(gif)).buffer())
+      )
         .png()
         .toBuffer(),
       'image/png'
