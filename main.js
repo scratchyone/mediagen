@@ -129,19 +129,12 @@ app.get('/owoJson', async (req, res) => {
   ).filter((c) => chroma.deltaE(c.hex(), '#FFFFFF') > 15);
   res.json({
     imageURL: gif,
-    authorName: req.query.authee
-      ? owoInfo[req.query.action].titles
-          .random()
-          .split('authee')
-          .join(req.query.authee)
-          .split('author')
-          .join(req.query.author)
-      : owoInfo[req.query.action].titles
-          .random()
-          .split('author')
-          .join(req.query.author)
-          .split('authee')
-          .join('somebody'),
+    authorName: owoInfo[req.query.action].titles
+      .random()
+      .split('authee')
+      .join(req.query.authee || 'somebody')
+      .split('author')
+      .join(req.query.author || 'somebody'),
     color: color[0] ? color[0].hex() : '#FFFFFF',
   });
 });
