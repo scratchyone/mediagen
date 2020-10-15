@@ -111,7 +111,7 @@ const NodeCache = require('node-cache');
 const myCache = new NodeCache();
 const owoInfo = require('./owoInfo.json');
 const getColors = require('get-image-colors');
-
+const chroma = require('chroma-js');
 app.get('/owoJson', async (req, res) => {
   if (Object.keys(owoInfo).indexOf(req.query.action) === -1) {
     res.status(404);
@@ -119,12 +119,14 @@ app.get('/owoJson', async (req, res) => {
     return;
   }
   const gif = owoInfo[req.query.action].gifs.random();
-  const color = await getColors(
-    await sharp(await (await fetch(gif)).buffer())
-      .png()
-      .toBuffer(),
-    'image/png'
-  );
+  const color = (
+    await getColors(
+      await sharp(await (await fetch(gif)).buffer())
+        .png()
+        .toBuffer(),
+      'image/png'
+    )
+  ).filter((c) => chroma.deltaE(c.hex(), '#FFFFFF') > 15);
   res.json({
     imageURL: gif,
     authorName: req.query.authee
@@ -140,7 +142,7 @@ app.get('/owoJson', async (req, res) => {
           .join(req.query.author)
           .split('authee')
           .join('somebody'),
-    color: color[0].hex(),
+    color: color[0] ? color[0].hex() : '#FFFFFF',
   });
 });
 app.get('/owoActions', (req, res) => {
