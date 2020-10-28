@@ -33,7 +33,7 @@ function roundRect(ctx, x, y, width, height, rradius, fill, stroke) {
 function createPollAttachment(votes) {
   const canvas = Canvas.createCanvas(320, 194);
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#36393F';
+  ctx.fillStyle = '#2F3136';
   ctx.rect(0, 0, 320, 194);
   ctx.fill();
   if (votes.up == 0 && votes.down == 0) {
