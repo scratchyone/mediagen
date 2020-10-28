@@ -166,13 +166,17 @@ app.get('/owoProxy.gif', async (req, res) => {
 });
 app.get('/emojiResize.png', async (req, res) => {
   if (!req.query.url) res.status(400).send('Error: url not provided');
-  res.contentType('image/png');
-  res.send(
-    await sharp(await (await fetch(req.query.url)).buffer())
-      .resize({ height: 128, width: 128, fit: 'outside' })
-      .png()
-      .toBuffer()
-  );
+  try {
+    res.contentType('image/png');
+    res.send(
+      await sharp(await (await fetch(req.query.url)).buffer())
+        .resize({ height: 128, width: 128, fit: 'outside' })
+        .png()
+        .toBuffer()
+    );
+  } catch (e) {
+    res.status(500).send(e.toString())
+  }
 });
 async function resizeGif(url) {
   return await gifResize({
