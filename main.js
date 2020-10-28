@@ -33,9 +33,9 @@ function roundRect(ctx, x, y, width, height, rradius, fill, stroke) {
 function createPollAttachment(votes) {
   const canvas = Canvas.createCanvas(320, 194);
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'white';
-  //ctx.rect(0, 0, 320, 194);
-  //ctx.fill();
+  ctx.fillStyle = '#36393F';
+  ctx.rect(0, 0, 320, 194);
+  ctx.fill();
   if (votes.up == 0 && votes.down == 0) {
     ctx.fillStyle = '#4397C7';
     roundRect(ctx, 40, 74, 240, 46, 5, true, false);
@@ -175,7 +175,7 @@ app.get('/emojiResize.png', async (req, res) => {
         .toBuffer()
     );
   } catch (e) {
-    res.status(500).send(e.toString())
+    res.status(500).send(e.toString());
   }
 });
 async function resizeGif(url) {
