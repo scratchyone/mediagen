@@ -34,8 +34,8 @@ function createPollAttachment(votes) {
   const canvas = Canvas.createCanvas(320, 194);
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = 'white';
-  ctx.rect(0, 0, 320, 194);
-  ctx.fill();
+  //ctx.rect(0, 0, 320, 194);
+  //ctx.fill();
   if (votes.up == 0 && votes.down == 0) {
     ctx.fillStyle = '#4397C7';
     roundRect(ctx, 40, 74, 240, 46, 5, true, false);
@@ -74,7 +74,7 @@ function createPollAttachment(votes) {
       );
     }
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#535353';
+    ctx.fillStyle = '#FFFFFF';
     ctx.font = '600 20px Roboto';
     if (votes.up >= votes.down)
       ctx.fillText(
