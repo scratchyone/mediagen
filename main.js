@@ -223,6 +223,9 @@ app.get('/online', (req, res) => {
   ctx.fillText('From ' + 'scratchyone!', 320 / 2, 70);
   canvas.pngStream().pipe(res);
 });
+app.get('/', (req, res) => {
+  res.send('Online');
+});
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
