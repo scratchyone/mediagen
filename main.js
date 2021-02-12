@@ -218,11 +218,12 @@ async function resizeGif(url) {
   })(await (await fetch(url)).buffer());
 }
 (async () => {
-  console.log(
-    `Caching ${Object.values(owoInfo).flatMap((n) => n.gifs).length} gifs`
-  );
+  console.log(`Caching gifs`);
   for (const gif of Object.values(owoInfo).flatMap((n) => n.gifs))
     myCache.set(`owoProxy.${gif}`, await resizeGif(gif));
+  for (const gif of coinFlipGifs)
+    myCache.set(`owoProxy.${gif}`, await resizeGif(gif));
+
   console.log('Cached all gifs');
 })();
 function noFreeConversions(res) {
