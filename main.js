@@ -109,6 +109,7 @@ Array.prototype.random = function () {
 const NodeCache = require('node-cache');
 const myCache = new NodeCache();
 const owoInfo = require('./owoInfo.json');
+const coinFlipGifs = require('./coinFlipGifs.json');
 const getColors = require('get-image-colors');
 const chroma = require('chroma-js');
 app.get('/owoJson', async (req, res) => {
@@ -139,6 +140,36 @@ app.get('/owoJson', async (req, res) => {
     color: color[0] ? color[0].hex() : '#FFFFFF',
   });
 });
+app.get('/coinFlip', async (req, res) => {
+  const gif = coinFlipGifs.random();
+  res.json({
+    imageURL: gif,
+    length: gifDuration(await (await fetch(gif)).buffer()),
+  });
+});
+function gifDuration(data) {
+  var d = new Uint8Array(data);
+  // Thanks to http://justinsomnia.org/2006/10/gif-animation-duration-calculation/
+  // And http://www.w3.org/Graphics/GIF/spec-gif89a.txt
+  var duration = 0;
+  for (var i = 0; i < d.length; i++) {
+    // Find a Graphic Control Extension hex(21F904__ ____ __00)
+    if (
+      d[i] == 0x21 &&
+      d[i + 1] == 0xf9 &&
+      d[i + 2] == 0x04 &&
+      d[i + 7] == 0x00
+    ) {
+      // Swap 5th and 6th bytes to get the delay per frame
+      var delay = (d[i + 5] << 8) | (d[i + 4] & 0xff);
+
+      // Should be aware browsers have a minimum frame delay
+      // e.g. 6ms for IE, 2ms modern browsers (50fps)
+      duration += delay < 2 ? 10 : delay;
+    }
+  }
+  return duration * 10;
+}
 app.get('/owoActions', (req, res) => {
   res.json(Object.keys(owoInfo));
 });
@@ -147,7 +178,8 @@ app.get('/owoProxy.gif', async (req, res) => {
   if (
     !Object.values(owoInfo)
       .flatMap((n) => n.gifs)
-      .includes(req.query.url)
+      .includes(req.query.url) &&
+    !coinFlipGifs.includes(req.query.url)
   ) {
     noFreeConversions(res);
     return;
