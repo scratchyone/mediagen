@@ -4,6 +4,92 @@ const sharp = require('sharp');
 const Canvas = require('canvas');
 Canvas.registerFont('./Roboto-Bold.ttf', { family: 'Roboto' });
 const fetch = require('node-fetch');
+const dns = require('dns');
+const http = require('http');
+const https = require('https');
+const net = require('net');
+
+const blockedRanges = new net.BlockList();
+for (const [addr, prefix] of [
+  ['0.0.0.0', 8],
+  ['10.0.0.0', 8],
+  ['100.64.0.0', 10],
+  ['127.0.0.0', 8],
+  ['169.254.0.0', 16],
+  ['172.16.0.0', 12],
+  ['192.0.0.0', 24],
+  ['192.168.0.0', 16],
+  ['198.18.0.0', 15],
+  ['224.0.0.0', 4],
+  ['240.0.0.0', 4],
+])
+  blockedRanges.addSubnet(addr, prefix, 'ipv4');
+for (const [addr, prefix] of [
+  ['::', 128],
+  ['::1', 128],
+  ['64:ff9b::', 96],
+  ['fc00::', 7],
+  ['fe80::', 10],
+  ['ff00::', 8],
+])
+  blockedRanges.addSubnet(addr, prefix, 'ipv6');
+
+function publicOnlyLookup(hostname, options, callback) {
+  dns.lookup(hostname, { ...options, all: true }, (err, addresses) => {
+    if (err) return callback(err);
+    const blocked = addresses.find((a) =>
+      blockedRanges.check(a.address, a.family === 6 ? 'ipv6' : 'ipv4')
+    );
+    if (blocked || addresses.length === 0)
+      return callback(new Error('destination not allowed'));
+    if (options.all) return callback(null, addresses);
+    callback(null, addresses[0].address, addresses[0].family);
+  });
+}
+const httpAgent = new http.Agent({ lookup: publicOnlyLookup });
+const httpsAgent = new https.Agent({ lookup: publicOnlyLookup });
+const MAX_FETCH_BYTES = 8 * 1024 * 1024;
+const ALLOWED_FORMATS = ['png', 'jpeg', 'webp', 'gif'];
+const MAX_REDIRECTS = 3;
+const MAX_INPUT_PIXELS = 4096 * 4096;
+
+function assertAllowedUrl(target) {
+  if (target.protocol !== 'http:' && target.protocol !== 'https:')
+    throw new Error('unsupported scheme');
+  const literal = target.hostname.replace(/^\[|\]$/g, '');
+  const literalFamily = net.isIP(literal);
+  if (literalFamily && blockedRanges.check(literal, literalFamily === 6 ? 'ipv6' : 'ipv4'))
+    throw new Error('destination not allowed');
+}
+
+async function fetchPublicImage(rawUrl) {
+  let target = new URL(rawUrl);
+  const deadline = Date.now() + 10000;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    assertAllowedUrl(target);
+    const response = await fetch(target.href, {
+      agent: target.protocol === 'https:' ? httpsAgent : httpAgent,
+      redirect: 'manual',
+      compress: false,
+      headers: { 'Accept-Encoding': 'identity' },
+      size: MAX_FETCH_BYTES,
+      timeout: Math.max(1, deadline - Date.now()),
+    });
+    if (response.status >= 300 && response.status < 400 && response.headers.get('location')) {
+      target = new URL(response.headers.get('location'), target);
+      continue;
+    }
+    if (!response.ok) throw new Error('upstream error ' + response.status);
+    if ((response.headers.get('content-encoding') || 'identity') !== 'identity')
+      throw new Error('encoded responses not accepted');
+    const buffer = await response.buffer();
+    const { format } = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+    if (!ALLOWED_FORMATS.includes(format)) throw new Error('unsupported image format');
+    return buffer;
+  }
+  throw new Error('too many redirects');
+}
+
 function roundRect(ctx, x, y, width, height, rradius, fill, stroke) {
   const radius = { tl: rradius, tr: rradius, br: rradius, bl: rradius };
   ctx.beginPath();
@@ -196,17 +282,19 @@ app.get('/owoProxy.gif', async (req, res) => {
   }
 });
 app.get('/emojiResize.png', async (req, res) => {
-  if (!req.query.url) res.status(400).send('Error: url not provided');
+  if (typeof req.query.url !== 'string')
+    return res.status(400).send('Error: url not provided');
   try {
+    const image = await fetchPublicImage(req.query.url);
+    const resized = await sharp(image, { limitInputPixels: MAX_INPUT_PIXELS })
+      .resize({ height: 128, width: 128, fit: 'outside' })
+      .png()
+      .toBuffer();
     res.contentType('image/png');
-    res.send(
-      await sharp(await (await fetch(req.query.url)).buffer())
-        .resize({ height: 128, width: 128, fit: 'outside' })
-        .png()
-        .toBuffer()
-    );
+    res.send(resized);
   } catch (e) {
-    res.status(500).send(e.toString());
+    console.error('emojiResize failed:', e.message);
+    res.status(422).send('Error: could not process image');
   }
 });
 async function resizeGif(url) {
@@ -258,6 +346,11 @@ app.get('/online', (req, res) => {
 app.get('/', (req, res) => {
   res.send('Online');
 });
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (!res.headersSent) res.status(500).send('Error');
+});
+process.on('unhandledRejection', (e) => console.error('unhandledRejection', e));
 app.listen(process.env.PORT, () => {
   console.log(`Example app listening at http://localhost:${process.env.PORT}`);
 });
